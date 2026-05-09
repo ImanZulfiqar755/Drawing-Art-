@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ultimate Drawing App</title>
+
+  <style>
+
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+    }
+
+    body{
+      height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      background:linear-gradient(135deg,#0f172a,#0284c7);
+      font-family:Arial, sans-serif;
+      padding:15px;
+    }
+
+    .app{
+      width:900px;
+      background:white;
+      border-radius:22px;
+      overflow:hidden;
+      box-shadow:0 15px 35px rgba(0,0,0,0.35);
+    }
+
+    .header{
+      background:linear-gradient(90deg,#019EE6,#005f99);
+      color:white;
+      padding:18px;
+      text-align:center;
+    }
+
+    .header h1{
+      font-size:28px;
+      margin-bottom:4px;
+    }
+
+    .header p{
+      font-size:13px;
+      opacity:0.9;
+    }
+
+    .toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      align-items:center;
+      gap:12px;
+      padding:15px;
+      background:#f8fafc;
+      border-bottom:2px solid #e2e8f0;
+    }
+
+    .tool{
+      background:white;
+      padding:8px 12px;
+      border-radius:12px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      box-shadow:0 3px 8px rgba(0,0,0,0.08);
+      font-size:14px;
+    }
+
+    button{
+      border:none;
+      padding:10px 15px;
+      border-radius:10px;
+      cursor:pointer;
+      color:white;
+      font-weight:bold;
+      transition:0.3s;
+      font-size:13px;
+    }
+
+    button:hover{
+      transform:translateY(-2px);
+      opacity:0.9;
+    }
+
+    .clear{
+      background:#ef4444;
+    }
+
+    .save{
+      background:#10b981;
+    }
+
+    .eraser{
+      background:#f59e0b;
+    }
+
+    .undo{
+      background:#8b5cf6;
+    }
+
+    .bg{
+      background:#0ea5e9;
+    }
+
+    input[type="range"]{
+      cursor:pointer;
+    }
+
+    canvas{
+      background:white;
+      width:100%;
+      border-top:2px solid #019EE6;
+      cursor:crosshair;
+    }
+
+    .footer{
+      background:#0f172a;
+      color:white;
+      text-align:center;
+      padding:10px;
+      font-size:12px;
+    }
+
+    #sizeValue{
+      font-weight:bold;
+      color:#019EE6;
+    }
+
+  </style>
+
+</head>
+<body>
+
+  <div class="app">
+
+    <div class="header">
+      <h1>🎨 Ultimate Drawing App</h1>
+      <p>Interactive & Professional Canvas Application</p>
+    </div>
+
+    <div class="toolbar">
+
+      <div class="tool">
+        🎨
+        <input type="color" id="colorPicker" value="#000000">
+      </div>
+
+      <div class="tool">
+        🖌
+        <input type="range" id="brushSize" min="1" max="50" value="5">
+        <span id="sizeValue">5</span>
+      </div>
+
+      <div class="tool">
+        🌈 Background
+        <input type="color" id="bgColor" value="#ffffff">
+      </div>
+
+      <button class="eraser" onclick="eraserMode()">🧽 Eraser</button>
+
+      <button class="undo" onclick="undoLast()">↩ Undo</button>
+
+      <button class="clear" onclick="clearCanvas()">🗑 Clear</button>
+
+      <button class="save" onclick="saveCanvas()">💾 Save</button>
+
+    </div>
+
+    <canvas id="canvas" width="900" height="500"></canvas>
+
+    <div class="footer">
+      ✨ Smooth Drawing • Undo • Background Color • Save Feature
+    </div>
+
+  </div>
+
+  <script>
+
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const colorPicker = document.getElementById("colorPicker");
+    const brushSize = document.getElementById("brushSize");
+    const sizeValue = document.getElementById("sizeValue");
+    const bgColor = document.getElementById("bgColor");
+
+    let drawing = false;
+    let currentColor = colorPicker.value;
+
+    let restoreArray = [];
+    let index = -1;
+
+    // Brush Size
+    brushSize.addEventListener("input", () => {
+      sizeValue.innerText = brushSize.value;
+    });
+
+    // Color Change
+    colorPicker.addEventListener("change", () => {
+      currentColor = colorPicker.value;
+    });
+
+    // Background Color
+    bgColor.addEventListener("change", () => {
+      canvas.style.background = bgColor.value;
+    });
+
+    // Mouse Events
+    canvas.addEventListener("mousedown", startPosition);
+    canvas.addEventListener("mouseup", finishedPosition);
+    canvas.addEventListener("mouseleave", finishedPosition);
+    canvas.addEventListener("mousemove", draw);
+
+    function startPosition(e){
+      drawing = true;
+      draw(e);
+    }
+
+    function finishedPosition(){
+
+      if(drawing){
+        drawing = false;
+        ctx.beginPath();
+
+        restoreArray.push(
+          ctx.getImageData(0,0,canvas.width,canvas.height)
+        );
+
+        index += 1;
+      }
+    }
+
+    function draw(e){
+
+      if(!drawing) return;
+
+      const rect = canvas.getBoundingClientRect();
+
+      ctx.lineWidth = brushSize.value;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = currentColor;
+
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      ctx.lineTo(x,y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(x,y);
+    }
+
+    // Clear Canvas
+    function clearCanvas(){
+
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+
+    // Save Drawing
+    function saveCanvas(){
+
+      const link = document.createElement("a");
+
+      link.download = "my-drawing.png";
+      link.href = canvas.toDataURL();
+
+      link.click();
+    }
+
+    // Eraser
+    function eraserMode(){
+
+      currentColor = "#ffffff";
+    }
+
+    // Undo
+    function undoLast(){
+
+      if(index <= 0){
+
+        clearCanvas();
+
+      }else{
+
+        index -= 1;
+
+        restoreArray.pop();
+
+        ctx.putImageData(
+          restoreArray[index],
+          0,
+          0
+        );
+      }
+    }
+
+  </script>
+
+</body>
+</html>
